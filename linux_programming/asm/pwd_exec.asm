@@ -1,0 +1,14 @@
+section .text
+    global _start
+
+_start:
+    xor rdx, rdx
+    push rdx
+    mov rax, 0x6477702f6e69622f
+    push rax
+    mov rdi, rsp
+    push rdx
+    push rdi
+    mov rsi, rsp
+    lea rax, [rdx+59]
+    syscall
