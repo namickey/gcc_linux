@@ -6,45 +6,63 @@ public class WaitThread extends Thread implements Comparable<WaitThread> {
     private Integer priority;
     private Integer waitTime;
     private Integer waitTimeForTick;
-    private Integer flg = 2;
+    private String name;
+    private enum Status {
+        UNINITIALIZED, READY, GOING, END
+    }
+    private Status status = Status.UNINITIALIZED;
 
     public WaitThread(Task task, int priority, Integer waitTime) {
         this.task = task;
+        this.name = task.getClass().toString();
         this.priority = priority;
         this.waitTime = waitTime;
         this.waitTimeForTick = waitTime;
     }
 
-    public void setFlg(Integer flg) {
-        System.out.println("setFlg:" + flg);
-        this.flg = flg;
+    public void setEnd() {
+        System.out.println("setEnd");
+        this.status = Status.END;
     }
 
     public void tick(Integer tickTime) {
         this.waitTimeForTick -= tickTime;
-        //System.out.println(waitTime);
-        //System.out.println(waitTimeForTick);
     }
 
-    public Boolean isGo() {
+    public String getTaskName() {
+        return this.name;
+    }
+
+    public boolean isTimePast() {
         return waitTimeForTick < 0;
     }
 
-    public void waitTimeForTick() {
-        waitTimeForTick = waitTime;
+    public boolean isReady() {
+        return Status.READY.equals(this.status);
+    }
+
+    public boolean isGoing() {
+        return Status.GOING.equals(this.status);
     }
 
     @Override
     public void run() {
-        while(flg != 1) {
+        
+        while(!Status.END.equals(this.status)) {
             try {
-                if (flg == 2) {
-                    flg = 0;
-                    System.out.println("start");
+                if (Status.UNINITIALIZED.equals(this.status)) {
+                    this.status = Status.READY;
                     task.waitThread();
+                    this.status = Status.GOING;
                 } else {
+                    this.status = Status.GOING;
+                    waitTimeForTick = waitTime;
                     task.execute();
+                    this.status = Status.READY;
                     task.waitThread();
+                    if (!Status.END.equals(this.status)) {
+                        this.status = Status.GOING;
+                    }
                 }
             } catch(InterruptedException e) {
                 e.printStackTrace();

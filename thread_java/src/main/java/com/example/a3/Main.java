@@ -6,35 +6,57 @@ import java.util.PriorityQueue;
 public class Main {
     public static void main(String[] args) {
         PriorityQueue<WaitThread> queue = new PriorityQueue<>();
-        List<WaitThread> readyTasks = new ArrayList<>();
+        PriorityQueue<WaitThread> readyQueue = new PriorityQueue<>();
+        List<WaitThread> tasks = new ArrayList<>();
         try {
-            WaitThread wt1 = new WaitThread(new Counter(), 1, 600);
-            WaitThread wt2 = new WaitThread(new Checker(), 2, 200);
-            readyTasks.add(wt1);
-            readyTasks.add(wt2);
+            WaitThread wt1 = new WaitThread(new Counter(), 1, 3);
+            WaitThread wt2 = new WaitThread(new Checker(), 1, 2);
+            WaitThread wt3 = new WaitThread(new Checker(), 1, 6);
+            tasks.add(wt1);
+            tasks.add(wt2);
+            tasks.add(wt3);
+            readyQueue.add(wt1);
+            readyQueue.add(wt2);
+            readyQueue.add(wt3);
             wt1.start();
             wt2.start();
+            wt3.start();
 
-            for (int i = 0; i < 20; i++) {
+            WaitThread w = wt1;
+            for (int i = 0; i < 100; i++) {
                 
                 if(!queue.isEmpty()){
-                    WaitThread w = queue.poll();
-                    w.notifyThread();
-                    w.waitTimeForTick();
-                }
-
-                for (WaitThread waitThread : readyTasks) {
-                    waitThread.tick(100);
-                    if (waitThread.isGo()){
-                        queue.add(waitThread);
+                    if (!w.isGoing()) {
+                        w = queue.poll();
+                        w.notifyThread();
                     }
                 }
 
-                Thread.sleep(100);
+                for (WaitThread waitThread : tasks) {
+                    
+                    String str = "";
+
+                    if (!waitThread.isGoing() && waitThread.isTimePast()){
+                        if (readyQueue.contains(waitThread) && !queue.contains(waitThread)) {
+                            readyQueue.remove(waitThread);
+                            queue.add(waitThread);
+                            str = "+" + queue.size() + " " + waitThread.getTaskName();
+                        }
+                    }
+
+                    if (!waitThread.isGoing() && !readyQueue.contains(waitThread) && !queue.contains(waitThread)) {
+                        readyQueue.add(waitThread);
+                    }
+                    System.out.println(str);
+                    waitThread.tick(1);
+                }
+
+                Thread.sleep(10);
             }
 
-            for (WaitThread waitThread : readyTasks) {
-                waitThread.setFlg(1);
+            Thread.sleep(200);
+            for (WaitThread waitThread : tasks) {
+                waitThread.setEnd();
                 waitThread.notifyThread();
             }
             System.out.println("end");
