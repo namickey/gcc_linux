@@ -35,4 +35,10 @@ readelf -l hello
 
 ```shell
 readelf -l hello
+
+file hello
+
+hexdump -C hello
+
+objdump -d hello -M intel
 ```
